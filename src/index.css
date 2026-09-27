@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* 3Dカードフリップ用スタイル */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
+
+/* スクロールバーのカスタマイズ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #140a12;
+}
+::-webkit-scrollbar-thumb {
+  background: #481537;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8e2363;
+}
+
+/* 背景の星屑・グローアニメーション用 */
+.romantic-gradient-bg {
+  background: radial-gradient(circle at 50% 20%, #2c0f24 0%, #140a12 55%, #0a0508 100%);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #fff7db 0%, #fedc82 50%, #e5aa2b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.crimson-gradient-text {
+  background: linear-gradient(135deg, #fce3f0 0%, #d96aa8 40%, #8e2363 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card-pattern-gold {
+  background-image: radial-gradient(circle at center, rgba(229, 170, 43, 0.15) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
