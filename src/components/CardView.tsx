@@ -65,6 +65,10 @@ export const CardView: React.FC<CardViewProps> = ({
     <div className="w-full max-w-sm mx-auto aspect-[1/1.45] sm:aspect-[1/1.4] perspective-1000 select-none">
       <div
         onClick={onFlip}
+        style={{
+          transformStyle: 'preserve-3d',
+          WebkitTransformStyle: 'preserve-3d',
+        }}
         className={`relative w-full h-full duration-700 transform-style-3d cursor-pointer transition-transform ${
           isFlipped ? 'rotate-y-180' : ''
         }`}
@@ -72,7 +76,17 @@ export const CardView: React.FC<CardViewProps> = ({
         {/* ========================================================
             カード裏面（BACK）: 初期表示、タップしてめくる面
             ======================================================== */}
-        <div className="absolute inset-0 w-full h-full rounded-3xl p-4 sm:p-5 backface-hidden shadow-card-elevated border border-gold-500/30 bg-gradient-to-br from-romantic-900 via-romantic-950 to-[#0e040c] overflow-hidden flex flex-col items-center justify-between">
+        <div
+          style={{
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(0deg) translate3d(0, 0, 1px)',
+            WebkitTransform: 'rotateY(0deg) translate3d(0, 0, 1px)',
+          }}
+          className={`absolute inset-0 w-full h-full rounded-3xl p-4 sm:p-5 card-face-back shadow-card-elevated border border-gold-500/30 bg-gradient-to-br from-romantic-900 via-romantic-950 to-[#0e040c] overflow-hidden flex flex-col items-center justify-between transition-opacity duration-300 ${
+            isFlipped ? 'opacity-0 pointer-events-none z-0' : 'opacity-100 z-10'
+          }`}
+        >
           {/* 背景の装飾ライン */}
           <div className="absolute inset-2 rounded-2xl border border-gold-500/20 pointer-events-none" />
           <div className="absolute inset-3.5 rounded-xl border border-gold-400/10 pointer-events-none" />
@@ -122,7 +136,17 @@ export const CardView: React.FC<CardViewProps> = ({
         {/* ========================================================
             カード表面（FRONT）: 質問・アクション内容が表示される面
             ======================================================== */}
-        <div className="absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 backface-hidden rotate-y-180 shadow-card-elevated border border-gold-500/40 bg-gradient-to-br from-[#1a0a17] via-romantic-950 to-[#10050e] flex flex-col justify-between overflow-hidden">
+        <div
+          style={{
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg) translate3d(0, 0, 1px)',
+            WebkitTransform: 'rotateY(180deg) translate3d(0, 0, 1px)',
+          }}
+          className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 card-face-front shadow-card-elevated border border-gold-500/40 bg-gradient-to-br from-[#1a0a17] via-romantic-950 to-[#10050e] flex flex-col justify-between overflow-hidden transition-opacity duration-300 ${
+            isFlipped ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+          }`}
+        >
           {/* 枠線装飾 */}
           <div className="absolute inset-2 rounded-2xl border border-gold-500/20 pointer-events-none" />
           <div className="absolute inset-3.5 rounded-xl border border-gold-400/10 pointer-events-none" />
