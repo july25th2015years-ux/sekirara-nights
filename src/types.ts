@@ -4,6 +4,8 @@ export type CardLevel = 1 | 2 | 3;
 
 export type TurnTarget = 'you' | 'partner' | 'both';
 
+export type DeckCategory = 'level1' | 'level2' | 'level3' | 'action';
+
 export interface Card {
   id: string;
   type: CardType;
@@ -15,10 +17,16 @@ export interface Card {
   isCustom?: boolean;
 }
 
-export type PlayMode = 'progressive' | 'level1' | 'level2' | 'level3' | 'shuffle';
+export type PlayMode = 'progressive' | 'level1' | 'level2' | 'level3' | 'action_only' | 'shuffle' | 'custom';
+
+export interface DeckSelection {
+  level1: boolean;
+  level2: boolean;
+  level3: boolean;
+  action: boolean;
+}
 
 export interface GameSettings {
-  includeActionCards: boolean;
-  actionCardProbability: number; // 0.0 - 1.0 (例: 0.2で20%の確率でアクション)
   showTurnIndicator: boolean;
+  shuffleOrder: boolean; // シャッフルするか、レベル順に並べるか
 }

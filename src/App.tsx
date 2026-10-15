@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { INITIAL_CARDS } from './data/cards';
-import type { Card, PlayMode, GameSettings, TurnTarget } from './types';
+import type { Card, GameSettings, TurnTarget, DeckSelection } from './types';
 import { Header } from './components/Header';
 import { CardView } from './components/CardView';
 import { TurnIndicator } from './components/TurnIndicator';
@@ -14,6 +14,7 @@ import confetti from 'canvas-confetti';
 const STORAGE_KEY_CUSTOM = 'sekirara_custom_cards';
 const STORAGE_KEY_FAVORITES = 'sekirara_favorites';
 const STORAGE_KEY_SETTINGS = 'sekirara_settings';
+const STORAGE_KEY_SELECTION = 'sekirara_deck_selection';
 
 export const App: React.FC = () => {
   // --- 状態管理 ---
@@ -35,26 +36,34 @@ export const App: React.FC = () => {
     }
   });
 
+  const [selection, setSelection] = useState<DeckSelection>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SELECTION);
+      return saved
+        ? JSON.parse(saved)
+        : { level1: true, level2: true, level3: true, action: true };
+    } catch {
+      return { level1: true, level2: true, level3: true, action: true };
+    }
+  });
+
   const [settings, setSettings] = useState<GameSettings>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_SETTINGS);
       return saved
         ? JSON.parse(saved)
         : {
-            includeActionCards: true,
-            actionCardProbability: 0.15,
             showTurnIndicator: true,
+            shuffleOrder: true,
           };
     } catch {
       return {
-        includeActionCards: true,
-        actionCardProbability: 0.15,
         showTurnIndicator: true,
+        shuffleOrder: true,
       };
     }
   });
 
-  const [mode, setMode] = useState<PlayMode>('progressive');
   const [deck, setDeck] = useState<Card[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -89,6 +98,10 @@ export const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
   }, [settings]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_SELECTION, JSON.stringify(selection));
+  }, [selection]);
+
   // 全カード（初期データ ＋ カスタムカード）
   const allCards = useMemo(() => {
     return [...INITIAL_CARDS, ...customCards];
@@ -106,43 +119,31 @@ export const App: React.FC = () => {
 
   // デッキ生成ロジック
   const buildDeck = useCallback(
-    (selectedMode: PlayMode) => {
-      // アクションカードのフィルタリング
-      const filterActions = (cards: Card[]) => {
-        if (settings.includeActionCards) return cards;
-        return cards.filter((c) => c.type !== 'action');
-      };
+    (curSelection: DeckSelection) => {
+      // 選択されたチェックボックスに合致するカードを抽出
+      const filtered = allCards.filter((c) => {
+        if (c.type === 'action') {
+          return curSelection.action;
+        }
+        if (c.level === 1) return curSelection.level1;
+        if (c.level === 2) return curSelection.level2;
+        if (c.level === 3) return curSelection.level3;
+        return false;
+      });
 
-      let result: Card[] = [];
-
-      if (selectedMode === 'progressive') {
-        // ステップ進行: Level 1 -> Level 2 -> Level 3 の順で各グループをシャッフル
-        const l1 = shuffleArray(filterActions(allCards.filter((c) => c.level === 1)));
-        const l2 = shuffleArray(filterActions(allCards.filter((c) => c.level === 2)));
-        const l3 = shuffleArray(filterActions(allCards.filter((c) => c.level === 3)));
-        result = [...l1, ...l2, ...l3];
-      } else if (selectedMode === 'level1') {
-        result = shuffleArray(filterActions(allCards.filter((c) => c.level === 1)));
-      } else if (selectedMode === 'level2') {
-        result = shuffleArray(filterActions(allCards.filter((c) => c.level === 2)));
-      } else if (selectedMode === 'level3') {
-        result = shuffleArray(filterActions(allCards.filter((c) => c.level === 3)));
-      } else {
-        // shuffle
-        result = shuffleArray(filterActions(allCards));
-      }
-
-      setDeck(result);
+      // シャッフルして適用
+      const result = shuffleArray(filtered);
+      setDeck(result.length > 0 ? result : allCards);
       setCurrentIndex(0);
       setIsFlipped(false);
     },
-    [allCards, settings.includeActionCards]
+    [allCards]
   );
 
-  // モードまたはカード・設定変更時にデッキ再構築
+  // 選択変更時にデッキ再構築
   useEffect(() => {
-    buildDeck(mode);
-  }, [mode, buildDeck]);
+    buildDeck(selection);
+  }, [selection, buildDeck]);
 
   // 現在のカード
   const currentCard = deck[currentIndex] || deck[0];
@@ -177,8 +178,8 @@ export const App: React.FC = () => {
         origin: { y: 0.7 },
         colors: ['#e5aa2b', '#8e2363', '#fedc82'],
       });
-      // 最初のカードに戻るか再シャッフル
-      buildDeck(mode);
+      // 山札再シャッフル
+      buildDeck(selection);
     }
   };
 
@@ -203,7 +204,7 @@ export const App: React.FC = () => {
 
   // 山札シャッフル
   const handleShuffle = () => {
-    buildDeck(mode);
+    buildDeck(selection);
   };
 
   // お気に入りトグル
@@ -273,7 +274,7 @@ export const App: React.FC = () => {
 
       {/* ヘッダー */}
       <Header
-        currentMode={mode}
+        selection={selection}
         currentIndex={currentIndex + 1}
         totalCards={deck.length}
         favoritesCount={favorites.length}
@@ -340,10 +341,11 @@ export const App: React.FC = () => {
       <ModeSelectorModal
         isOpen={isModeOpen}
         onClose={() => setIsModeOpen(false)}
-        currentMode={mode}
-        onSelectMode={(newMode) => setMode(newMode)}
+        selection={selection}
+        onUpdateSelection={(newSelection) => setSelection(newSelection)}
         settings={settings}
         onUpdateSettings={(newSettings) => setSettings((s) => ({ ...s, ...newSettings }))}
+        totalCardsCount={deck.length}
       />
 
       <FavoritesModal

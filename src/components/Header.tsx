@@ -1,9 +1,9 @@
 import React from 'react';
 import { Sparkles, BookOpen, Settings, Layers, Bookmark } from 'lucide-react';
-import type { PlayMode } from '../types';
+import type { DeckSelection } from '../types';
 
 interface HeaderProps {
-  currentMode: PlayMode;
+  selection: DeckSelection;
   currentIndex: number;
   totalCards: number;
   favoritesCount: number;
@@ -14,7 +14,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  currentMode,
+  selection,
   currentIndex,
   totalCards,
   favoritesCount,
@@ -23,19 +23,19 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCustomCards,
   onOpenFavorites,
 }) => {
-  const getModeLabel = () => {
-    switch (currentMode) {
-      case 'progressive':
-        return 'ステップ進行 (Lv1→3)';
-      case 'level1':
-        return 'Level 1 : 恋愛観・出会い';
-      case 'level2':
-        return 'Level 2 : 親密さ・関係性';
-      case 'level3':
-        return 'Level 3 : 性の本音・夜';
-      case 'shuffle':
-        return '全シャッフル';
-    }
+  const getDeckLabel = () => {
+    const isAll = selection.level1 && selection.level2 && selection.level3 && selection.action;
+    if (isAll) return '全デッキMIX (120問)';
+
+    const parts: string[] = [];
+    if (selection.level1) parts.push('Lv.1');
+    if (selection.level2) parts.push('Lv.2');
+    if (selection.level3) parts.push('Lv.3');
+    if (selection.action) parts.push('スキンシップ');
+
+    if (parts.length === 0) return 'カード未選択';
+    if (parts.length === 1 && selection.action) return 'スキンシップのみ';
+    return parts.join(' ＋ ');
   };
 
   return (
@@ -51,11 +51,11 @@ export const Header: React.FC<HeaderProps> = ({
           </h1>
           <button
             onClick={onOpenModeSelector}
-            className="flex items-center gap-1 text-[11px] text-gold-400/80 hover:text-gold-300 transition-colors mt-0.5"
+            className="flex items-center gap-1 text-[11px] text-gold-400/90 hover:text-gold-300 transition-colors mt-0.5 bg-romantic-900/60 px-2 py-0.5 rounded-full border border-gold-500/20"
           >
-            <Layers className="w-3 h-3" />
-            <span>{getModeLabel()}</span>
-            <span className="text-[10px] text-zinc-500">▼</span>
+            <Layers className="w-3 h-3 text-gold-400" />
+            <span className="font-medium">{getDeckLabel()}</span>
+            <span className="text-[10px] text-zinc-400">▼</span>
           </button>
         </div>
       </div>

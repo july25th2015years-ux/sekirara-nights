@@ -1,67 +1,119 @@
 import React from 'react';
-import { X, Layers, Compass, MessageCircleHeart, Flame, Shuffle, Check, Wand2, UserCheck } from 'lucide-react';
-import type { PlayMode, GameSettings } from '../types';
+import { X, Compass, MessageCircleHeart, Flame, Wand2, Check, Sparkles, Layers } from 'lucide-react';
+import type { DeckSelection, GameSettings } from '../types';
 
 interface ModeSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentMode: PlayMode;
-  onSelectMode: (mode: PlayMode) => void;
+  selection: DeckSelection;
+  onUpdateSelection: (newSelection: DeckSelection) => void;
   settings: GameSettings;
   onUpdateSettings: (newSettings: Partial<GameSettings>) => void;
+  totalCardsCount: number;
 }
 
 export const ModeSelectorModal: React.FC<ModeSelectorModalProps> = ({
   isOpen,
   onClose,
-  currentMode,
-  onSelectMode,
+  selection,
+  onUpdateSelection,
   settings,
   onUpdateSettings,
+  totalCardsCount,
 }) => {
   if (!isOpen) return null;
 
-  const modes: { id: PlayMode; title: string; subtitle: string; icon: React.ReactNode; color: string }[] = [
+  // チェックボックスの切り替え
+  const toggleCategory = (key: keyof DeckSelection) => {
+    const next = { ...selection, [key]: !selection[key] };
+    // 最低1つは選択されている必要がある
+    const hasAny = Object.values(next).some(Boolean);
+    if (!hasAny) return;
+    onUpdateSelection(next);
+  };
+
+  // プリセットショートカット
+  const setPreset = (preset: 'all' | 'level1' | 'level2' | 'level3' | 'action_only' | 'intimate' | 'deep') => {
+    switch (preset) {
+      case 'all':
+        onUpdateSelection({ level1: true, level2: true, level3: true, action: true });
+        break;
+      case 'action_only':
+        onUpdateSelection({ level1: false, level2: false, level3: false, action: true });
+        break;
+      case 'level1':
+        onUpdateSelection({ level1: true, level2: false, level3: false, action: false });
+        break;
+      case 'level2':
+        onUpdateSelection({ level1: false, level2: true, level3: false, action: false });
+        break;
+      case 'level3':
+        onUpdateSelection({ level1: false, level2: false, level3: true, action: false });
+        break;
+      case 'intimate': // Level 2 + スキンシップ
+        onUpdateSelection({ level1: false, level2: true, level3: false, action: true });
+        break;
+      case 'deep': // Level 3 + スキンシップ
+        onUpdateSelection({ level1: false, level2: false, level3: true, action: true });
+        break;
+    }
+  };
+
+  const categories: {
+    key: keyof DeckSelection;
+    title: string;
+    count: number;
+    sub: string;
+    icon: React.ReactNode;
+    color: string;
+    borderActive: string;
+    bgActive: string;
+  }[] = [
     {
-      id: 'progressive',
-      title: '段階的ステップ進行（おすすめ）',
-      subtitle: 'Level 1から順に少しずつ深まり、自然にディープな対話へ導きます',
-      icon: <Layers className="w-5 h-5 text-gold-400" />,
-      color: 'border-gold-500/50 bg-gradient-to-r from-gold-950/40 to-romantic-900/40'
-    },
-    {
-      id: 'level1',
+      key: 'level1',
       title: 'Level 1 : 出会い & 恋愛観',
-      subtitle: '第一印象やお互いのキュンとした瞬間など、気軽に楽しむアイスブレイク',
-      icon: <Compass className="w-5 h-5 text-rose-400" />,
-      color: 'border-rose-500/40 bg-rose-950/20'
+      count: 30,
+      sub: '第一印象やキュンとする瞬間、YES/NOでテンポよく語り合う',
+      icon: <Compass className="w-5 h-5 text-rose-300" />,
+      color: 'text-rose-200',
+      borderActive: 'border-rose-400 bg-rose-950/30',
+      bgActive: 'bg-rose-500'
     },
     {
-      id: 'level2',
+      key: 'level2',
       title: 'Level 2 : 親密さ & 関係性',
-      subtitle: '感謝の気持ちや身体の好み、普段言えない本音に一歩踏み込む',
-      icon: <MessageCircleHeart className="w-5 h-5 text-purple-400" />,
-      color: 'border-purple-500/40 bg-purple-950/20'
+      count: 30,
+      sub: '普段言えない感謝、好みのスキンシップ、身体の好みに一歩踏み込む',
+      icon: <MessageCircleHeart className="w-5 h-5 text-purple-300" />,
+      color: 'text-purple-200',
+      borderActive: 'border-purple-400 bg-purple-950/30',
+      bgActive: 'bg-purple-500'
     },
     {
-      id: 'level3',
+      key: 'level3',
       title: 'Level 3 : 性の本音 & 夜の過ごし方',
-      subtitle: '夜の営みの本音、秘密の願望、試してみたいことなど最もディープな対話',
-      icon: <Flame className="w-5 h-5 text-romantic-400" />,
-      color: 'border-romantic-500/40 bg-romantic-950/30'
+      count: 30,
+      sub: '夜の営みの本音、秘密の願望、一番気持ちいい瞬間などのディープな対話',
+      icon: <Flame className="w-5 h-5 text-romantic-300" />,
+      color: 'text-romantic-200',
+      borderActive: 'border-romantic-400 bg-romantic-900/40',
+      bgActive: 'bg-romantic-500'
     },
     {
-      id: 'shuffle',
-      title: '全レベル シャッフル',
-      subtitle: 'すべての難易度からランダムにカードが出現します',
-      icon: <Shuffle className="w-5 h-5 text-zinc-300" />,
-      color: 'border-zinc-700 bg-zinc-900/30'
+      key: 'action',
+      title: 'スキンシップ・アクション',
+      count: 30,
+      sub: '10秒見つめ合う、耳元で囁く、ハグやキスなどのドキドキ実践ミッション',
+      icon: <Wand2 className="w-5 h-5 text-amber-300" />,
+      color: 'text-amber-200',
+      borderActive: 'border-amber-400 bg-amber-950/30',
+      bgActive: 'bg-amber-500'
     }
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md max-h-[88vh] overflow-y-auto rounded-3xl bg-gradient-to-b from-romantic-900 to-romantic-950 border border-gold-500/30 p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-gradient-to-b from-romantic-900 to-romantic-950 border border-gold-500/30 p-5 sm:p-6 shadow-2xl">
         {/* 閉じるボタン */}
         <button
           onClick={onClose}
@@ -72,77 +124,103 @@ export const ModeSelectorModal: React.FC<ModeSelectorModalProps> = ({
 
         {/* ヘッダー */}
         <div className="text-center mb-5">
+          <div className="w-10 h-10 rounded-full bg-gold-500/10 border border-gold-500/30 mx-auto flex items-center justify-center mb-2">
+            <Layers className="w-5 h-5 text-gold-400" />
+          </div>
           <h2 className="font-serif text-lg font-bold gold-gradient-text tracking-wider">
-            プレイモード選択
+            山札デッキの自由選択
           </h2>
           <p className="text-xs text-romantic-200/70 mt-1">
-            今夜のシチュエーションに合わせて選択してください
+            遊びたいレベルやスキンシップを自由に組み合わせて選べます
           </p>
         </div>
 
-        {/* モードリスト */}
-        <div className="space-y-2.5 mb-6">
-          {modes.map((m) => {
-            const isSelected = currentMode === m.id;
+        {/* クイックプリセット */}
+        <div className="mb-4">
+          <div className="text-[11px] font-semibold text-gold-400/80 mb-2 uppercase tracking-wider">
+            おすすめ組み合わせ
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPreset('all')}
+              className="px-2.5 py-1 rounded-full text-xs bg-romantic-800/80 border border-romantic-700/60 hover:border-gold-400 text-gold-200 transition-colors"
+            >
+              全部入り (120問)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreset('action_only')}
+              className="px-2.5 py-1 rounded-full text-xs bg-amber-950/40 border border-amber-500/40 hover:border-amber-300 text-amber-200 transition-colors font-medium"
+            >
+              スキンシップのみ (30問)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreset('intimate')}
+              className="px-2.5 py-1 rounded-full text-xs bg-purple-950/40 border border-purple-500/40 hover:border-purple-300 text-purple-200 transition-colors"
+            >
+              Lv.2 ＋ スキンシップ
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreset('deep')}
+              className="px-2.5 py-1 rounded-full text-xs bg-romantic-900/60 border border-romantic-500/40 hover:border-romantic-300 text-rose-200 transition-colors"
+            >
+              Lv.3 ＋ スキンシップ
+            </button>
+          </div>
+        </div>
+
+        {/* チェックボックス選択カード群 */}
+        <div className="space-y-2.5 mb-5">
+          {categories.map((cat) => {
+            const isChecked = selection[cat.key];
             return (
-              <button
-                key={m.id}
-                onClick={() => {
-                  onSelectMode(m.id);
-                  onClose();
-                }}
-                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3.5 relative ${
-                  isSelected ? 'border-gold-400 bg-romantic-800/80 shadow-glow-gold' : `${m.color} hover:border-gold-500/40`
+              <div
+                key={cat.key}
+                onClick={() => toggleCategory(cat.key)}
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 relative select-none ${
+                  isChecked
+                    ? `${cat.borderActive} shadow-sm`
+                    : 'border-romantic-800/80 bg-romantic-950/40 opacity-60 hover:opacity-90'
                 }`}
               >
-                <div className="p-2 rounded-xl bg-romantic-950/70 shrink-0">
-                  {m.icon}
-                </div>
-                <div className="pr-6">
-                  <div className="text-sm font-bold text-gold-100 flex items-center gap-1.5">
-                    {m.title}
-                  </div>
-                  <div className="text-xs text-zinc-400 mt-0.5 leading-snug">
-                    {m.subtitle}
-                  </div>
+                {/* カスタムチェックボックス */}
+                <div
+                  className={`mt-0.5 w-5 h-5 rounded-lg flex items-center justify-center shrink-0 border transition-all ${
+                    isChecked
+                      ? 'bg-gold-500 border-gold-400 text-romantic-950 font-bold'
+                      : 'border-romantic-700 bg-romantic-900/70'
+                  }`}
+                >
+                  {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                 </div>
 
-                {isSelected && (
-                  <div className="absolute top-4 right-4 text-gold-400">
-                    <Check className="w-5 h-5" />
+                {/* 内容 */}
+                <div className="flex-1 pr-2">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-bold flex items-center gap-1.5 ${cat.color}`}>
+                      {cat.icon}
+                      {cat.title}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-romantic-900/90 text-gold-300 border border-romantic-700">
+                      {cat.count}問
+                    </span>
                   </div>
-                )}
-              </button>
+                  <p className="text-xs text-zinc-400 mt-1 leading-snug">
+                    {cat.sub}
+                  </p>
+                </div>
+              </div>
             );
           })}
         </div>
 
         {/* オプション設定 */}
-        <div className="border-t border-romantic-800 pt-4 space-y-3">
-          <h3 className="text-xs font-bold text-gold-400 tracking-wider uppercase mb-2">
-            ゲームオプション
-          </h3>
-
-          {/* スキンシップ/アクションカードの有無 */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-romantic-950/60 border border-romantic-800 text-xs">
-            <div className="flex items-center gap-2 text-zinc-200">
-              <Wand2 className="w-4 h-4 text-amber-400" />
-              <span>スキンシップ・アクションカードを含める</span>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.includeActionCards}
-              onChange={(e) => onUpdateSettings({ includeActionCards: e.target.checked })}
-              className="w-4 h-4 accent-gold-500 rounded cursor-pointer"
-            />
-          </div>
-
-          {/* ターン表示 */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-romantic-950/60 border border-romantic-800 text-xs">
-            <div className="flex items-center gap-2 text-zinc-200">
-              <UserCheck className="w-4 h-4 text-rose-400" />
-              <span>どちらが先に答えるかターン表示する</span>
-            </div>
+        <div className="border-t border-romantic-800/80 pt-4 mb-5 space-y-2.5 text-xs">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-romantic-950/60 border border-romantic-800">
+            <span className="text-zinc-300">回答ターン（あなた/相手/2人で）を表示する</span>
             <input
               type="checkbox"
               checked={settings.showTurnIndicator}
@@ -151,6 +229,15 @@ export const ModeSelectorModal: React.FC<ModeSelectorModalProps> = ({
             />
           </div>
         </div>
+
+        {/* 決定ボタン & 選択枚数表示 */}
+        <button
+          onClick={onClose}
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-gold-500 via-amber-400 to-gold-500 text-romantic-950 font-bold text-sm tracking-wider shadow-glow-gold hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-2"
+        >
+          <Sparkles className="w-4 h-4 text-romantic-950" />
+          <span>この組み合わせで遊ぶ（全 {totalCardsCount} 枚）</span>
+        </button>
       </div>
     </div>
   );
